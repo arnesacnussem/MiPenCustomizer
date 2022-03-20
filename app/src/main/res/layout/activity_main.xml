@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enabled" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/long_press_enabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LongPressEnabled" />
+
+        <TextView
+            android:id="@+id/long_press_time_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LongPressTime:" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="By default, after enabled long press, you'll no longer receive a 'click down' event, the 'click up' event will continue work." />
+
+        <SeekBar
+            android:id="@+id/long_press_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dbg_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Debug Info" />
+
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
