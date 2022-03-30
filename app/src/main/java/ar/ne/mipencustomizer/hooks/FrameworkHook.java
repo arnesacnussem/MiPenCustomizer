@@ -2,10 +2,7 @@ package ar.ne.mipencustomizer.hooks;
 
 import android.annotation.SuppressLint;
 import android.content.*;
-import android.os.IBinder;
-import android.os.Messenger;
-import android.os.RemoteException;
-import android.os.UserHandle;
+import android.os.*;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -16,68 +13,97 @@ import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class FrameworkHook implements IXposedHookZygoteInit, IXposedHookLoadPackage, ServiceConnection {
     public static final String TAG = "ar.ne.mipencustomizer.hooks.FrameworkHook";
+    private final AtomicReference<Messenger> mMessenger = new AtomicReference<>();
     private Context mContext;
-    private Messenger mMessenger;
+    private volatile boolean hooked = false;
+    private volatile boolean disableFreeFormLimit = false;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
-        if ("android".equals(lpparam.packageName)) {
-            XposedHelpers.findAndHookMethod("com.miui.server.stylus.MiuiStylusPageKeyListener", lpparam.classLoader,
-                    "shouldInterceptKey", KeyEvent.class, new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            KeyEvent event = (KeyEvent) param.args[0];
-                            boolean isPageKeyEnable = (boolean) XposedHelpers.callMethod(param.thisObject, "isPageKeyEnable", event);
-                            if (!isPageKeyEnable) {
-                                param.setResult(false);
-                            } else if (enabled()) {
-                                sendKeyEvent(event.getAction() == 0, event.getKeyCode());
-                                param.setResult(true);
-                            }
-                        }
-                    });
+        if (hooked || !"android".equals(lpparam.packageName)) return;
+        hooked = true;
 
-            XposedHelpers.findAndHookMethod("com.miui.server.stylus.MiuiStylusPageKeyListener", lpparam.classLoader,
-                    "initView", new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
+        XposedHelpers.findAndHookMethod("com.android.server.wm.MiuiFreeFormStackDisplayStrategy", lpparam.classLoader,
+                "getMaxMiuiFreeFormStackCount",
+                java.lang.String.class, "com.android.server.wm.MiuiFreeFormActivityStack", new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) {
+                        if (FrameworkHook.this.mContext != null) {
+                            disableFreeFormLimit = Settings.Global.getInt(FrameworkHook.this.mContext.getContentResolver(), "__disable_free_form_window_limit", 0) == 1;
+                            if (disableFreeFormLimit) param.setResult(null);
+                        }
+                    }
+
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        if (disableFreeFormLimit) param.setResult(16);
+                    }
+                });
+
+        XposedHelpers.findAndHookMethod("com.miui.server.stylus.MiuiStylusPageKeyListener", lpparam.classLoader,
+                "shouldInterceptKey", KeyEvent.class, new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) {
+                        KeyEvent event = (KeyEvent) param.args[0];
+                        boolean isPageKeyEnable = (boolean) XposedHelpers.callMethod(param.thisObject, "isPageKeyEnable", event);
+                        if (!isPageKeyEnable) {
+                            param.setResult(false);
+                        } else if (enabled()) {
+                            sendKeyEvent(event.getAction() == 0, event.getKeyCode());
+                            param.setResult(true);
+                        }
+                    }
+                });
+
+        XposedHelpers.findAndHookMethod("com.miui.server.stylus.MiuiStylusPageKeyListener", lpparam.classLoader,
+                "initView", new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) {
+                        synchronized (mMessenger) {
                             if (FrameworkHook.this.mContext == null) {
                                 FrameworkHook.this.mContext = (Context) XposedHelpers.getObjectField(param.thisObject, "mContext");
                                 BroadcastReceiver onBootCompletedReceiver = new BroadcastReceiver() {
                                     @Override
                                     public void onReceive(Context context, Intent intent) {
                                         FrameworkHook.this.mContext.unregisterReceiver(this);
-                                        bindService();
+                                        if (FrameworkHook.this.mMessenger.get() == null) {
+                                            bindService();
+                                        }
                                     }
                                 };
                                 BroadcastReceiver onRequestServiceStartReceiver = new BroadcastReceiver() {
                                     @Override
                                     public void onReceive(Context context, Intent intent) {
-                                        bindService();
+                                        if (FrameworkHook.this.mMessenger.get() == null) {
+                                            bindService();
+                                        }
                                     }
                                 };
                                 FrameworkHook.this.mContext.registerReceiver(onBootCompletedReceiver, new IntentFilter("android.intent.action.BOOT_COMPLETED"));
                                 FrameworkHook.this.mContext.registerReceiver(onRequestServiceStartReceiver, new IntentFilter("ar.ne.mipencustomizer.hooks.FrameworkHook.REQUEST_SERVICE_START"));
                             }
                         }
-                    });
-        }
+                    }
+                });
     }
 
     @SuppressLint("MissingPermission")
-    public void bindService() {
-        if (mContext == null) return;
-        if (
-                this.mContext.bindServiceAsUser(
-                        new Intent()
-                                .setComponent(new ComponentName("ar.ne.mipencustomizer", "ar.ne.mipencustomizer.MiPenCustomizerServer"))
-                                .setAction(this.getClass().getCanonicalName()),
-                        this, Context.BIND_AUTO_CREATE, UserHandle.getUserHandleForUid(0))
-        )
-            Log.d(TAG, "MiPenCustomizer: Bind service");
-        else Log.e(TAG, "MiPenCustomizer: Failed to bindService service");
+    public synchronized boolean bindService() {
+        if (mContext == null) return false;
+        boolean b = this.mContext.bindServiceAsUser(
+                new Intent()
+                        .setComponent(new ComponentName("ar.ne.mipencustomizer", "ar.ne.mipencustomizer.MiPenCustomizerServer"))
+                        .setAction(this.getClass().getCanonicalName()),
+                this, Context.BIND_AUTO_CREATE, UserHandle.getUserHandleForUid(0));
+        if (b) {
+            Log.d(TAG, "MiPenCustomizer: Service bound");
+            this.mContext.sendBroadcast(new Intent("ar.ne.mipencustomizer.MiPenCustomizerServer.started"));
+        } else Log.e(TAG, "MiPenCustomizer: Failed to bindService service");
+        return b;
     }
 
     public boolean enabled() {
@@ -85,14 +111,18 @@ public class FrameworkHook implements IXposedHookZygoteInit, IXposedHookLoadPack
     }
 
     public void sendKeyEvent(boolean down, int keycode) {
-        if (mMessenger != null) {
+        Message msg = new MPCKeyEvent(keycode, down).getMsg();
+        if (mMessenger.get() != null) {
             try {
-                mMessenger.send(new MPCKeyEvent(keycode, down).getMsg());
+                mMessenger.get().send(msg);
             } catch (RemoteException e) {
                 Log.e(TAG, "sendKeyEvent: Failed to send message", e);
             }
-        } else {
-            bindService();
+        } else if (bindService()) {
+            try {
+                mMessenger.get().send(Message.obtain(msg));
+            } catch (RemoteException ignored) {
+            }
         }
     }
 
@@ -102,13 +132,13 @@ public class FrameworkHook implements IXposedHookZygoteInit, IXposedHookLoadPack
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        mMessenger = new Messenger(service);
-        Log.d(TAG, "onServiceConnected: mMessenger set");
+        mMessenger.set(new Messenger(service));
+        Log.d(TAG, "onServiceConnected: Service connected, messenger=" + mMessenger.get());
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        mMessenger = null;
+        mMessenger.set(null);
         Log.d(TAG, "onServiceDisconnected: mMessenger cleared");
         bindService();
     }

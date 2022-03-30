@@ -26,7 +26,6 @@ public class MiPenCustomizerServer extends Service {
         unregister = settings.registerOnChangeBroadcastReceiver();
         flexcilHookHandler = new Relay(settings, "FlexcilHook");
         frameworkEventHandler = new FrameworkEventHandler(settings, flexcilHookHandler::forwardEvent);
-        this.sendBroadcast(new Intent("ar.ne.mipencustomizer.MiPenCustomizerServer.started"));
     }
 
     @Override

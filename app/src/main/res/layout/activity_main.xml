@@ -44,5 +44,11 @@
             android:layout_height="wrap_content"
             android:text="Debug Info" />
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/disableFF"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Disable Miui FreeForm Window amount limit" />
+
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

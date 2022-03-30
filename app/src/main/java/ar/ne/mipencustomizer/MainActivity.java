@@ -45,6 +45,13 @@ public class MainActivity extends Activity {
             sw.setOnCheckedChangeListener((buttonView, isChecked) ->
                     Settings.Global.putInt(MainActivity.this.getContentResolver(), "__mpc_enabled", isChecked ? 1 : 0));
         }
+        {//setting: Enable
+            int enable = Settings.Global.getInt(this.getContentResolver(), "__disable_free_form_window_limit", 0);
+            SwitchMaterial sw = findViewById(R.id.disableFF);
+            sw.setChecked(enable == 1);
+            sw.setOnCheckedChangeListener((buttonView, isChecked) ->
+                    Settings.Global.putInt(MainActivity.this.getContentResolver(), "__disable_free_form_window_limit", isChecked ? 1 : 0));
+        }
 
         ar.ne.mipencustomizer.Settings settings = new ar.ne.mipencustomizer.Settings(this);
         {//setting: long press delay
