@@ -49,8 +49,12 @@ public class FlexcilHook implements IXposedHookLoadPackage, ServiceConnection {
                         flexcil.toggleTriangle();
                         break;
                     case KeyEvent.KEYCODE_PAGE_UP:
-                        previousPenToolBeforeLongPress = flexcil.getCurrentPenToolIndex();
-                        flexcil.setCurrentPenToolByIndex(flexcil.getPenToolCount() - 1);
+                        if (flexcil.getCurrentPenToolIndex() == flexcil.getPenToolCount() - 1)
+                            cycleFirst2Pen();
+                        else {
+                            previousPenToolBeforeLongPress = flexcil.getCurrentPenToolIndex();
+                            flexcil.setCurrentPenToolByIndex(flexcil.getPenToolCount() - 1);
+                        }
                         break;
                 }
                 break;

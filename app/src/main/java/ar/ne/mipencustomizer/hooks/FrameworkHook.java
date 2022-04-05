@@ -20,29 +20,11 @@ public class FrameworkHook implements IXposedHookZygoteInit, IXposedHookLoadPack
     private final AtomicReference<Messenger> mMessenger = new AtomicReference<>();
     private Context mContext;
     private volatile boolean hooked = false;
-    private volatile boolean disableFreeFormLimit = false;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
         if (hooked || !"android".equals(lpparam.packageName)) return;
         hooked = true;
-
-        XposedHelpers.findAndHookMethod("com.android.server.wm.MiuiFreeFormStackDisplayStrategy", lpparam.classLoader,
-                "getMaxMiuiFreeFormStackCount",
-                java.lang.String.class, "com.android.server.wm.MiuiFreeFormActivityStack", new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        if (FrameworkHook.this.mContext != null) {
-                            disableFreeFormLimit = Settings.Global.getInt(FrameworkHook.this.mContext.getContentResolver(), "__disable_free_form_window_limit", 0) == 1;
-                            if (disableFreeFormLimit) param.setResult(null);
-                        }
-                    }
-
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        if (disableFreeFormLimit) param.setResult(16);
-                    }
-                });
 
         XposedHelpers.findAndHookMethod("com.miui.server.stylus.MiuiStylusPageKeyListener", lpparam.classLoader,
                 "shouldInterceptKey", KeyEvent.class, new XC_MethodHook() {

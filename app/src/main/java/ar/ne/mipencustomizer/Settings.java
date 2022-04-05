@@ -1,11 +1,7 @@
 package ar.ne.mipencustomizer;
 
 import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.util.Log;
 
 public class Settings {
@@ -62,6 +58,7 @@ public class Settings {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putInt("longPressTime", longPressTime);
         editor.putBoolean("enableLongPress", longPressEnabled);
+        editor.apply();
         editor.commit();
         context.sendBroadcast(new Intent("ar.ne.mipencustomizer.Settings.save"));
     }
