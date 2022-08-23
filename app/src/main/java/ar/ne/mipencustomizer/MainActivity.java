@@ -3,23 +3,19 @@ package ar.ne.mipencustomizer;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
 import android.widget.SeekBar;
 import android.widget.TextView;
-
 import androidx.annotation.Nullable;
-
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.io.IOException;
 
 public class MainActivity extends Activity {
     public static volatile Handler uiHandler;
-    private ServiceConnection serviceConnection;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -44,13 +40,6 @@ public class MainActivity extends Activity {
             sw.setChecked(enable == 1);
             sw.setOnCheckedChangeListener((buttonView, isChecked) ->
                     Settings.Global.putInt(MainActivity.this.getContentResolver(), "__mpc_enabled", isChecked ? 1 : 0));
-        }
-        {//setting: Enable
-            int enable = Settings.Global.getInt(this.getContentResolver(), "__disable_free_form_window_limit", 0);
-            SwitchMaterial sw = findViewById(R.id.disableFF);
-            sw.setChecked(enable == 1);
-            sw.setOnCheckedChangeListener((buttonView, isChecked) ->
-                    Settings.Global.putInt(MainActivity.this.getContentResolver(), "__disable_free_form_window_limit", isChecked ? 1 : 0));
         }
 
         ar.ne.mipencustomizer.Settings settings = new ar.ne.mipencustomizer.Settings(this);

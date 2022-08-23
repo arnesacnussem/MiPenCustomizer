@@ -15,14 +15,14 @@ public class MiPenCustomizerServer extends Service {
     Runnable unregister;
     private AbstractHandler frameworkEventHandler;
     private Relay flexcilHookHandler;
-    private Settings settings;
 
     public MiPenCustomizerServer() {
     }
 
     @Override
     public void onCreate() {
-        settings = new Settings(this);
+        Log.i(TAG, "onCreate: by package " + this.getPackageName());
+        Settings settings = new Settings(this);
         unregister = settings.registerOnChangeBroadcastReceiver();
         flexcilHookHandler = new Relay(settings, "FlexcilHook");
         frameworkEventHandler = new FrameworkEventHandler(settings, flexcilHookHandler::forwardEvent);

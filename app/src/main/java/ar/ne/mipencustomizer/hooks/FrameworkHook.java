@@ -2,6 +2,7 @@ package ar.ne.mipencustomizer.hooks;
 
 import android.annotation.SuppressLint;
 import android.content.*;
+import android.content.pm.PackageManager;
 import android.os.*;
 import android.provider.Settings;
 import android.util.Log;
@@ -76,11 +77,18 @@ public class FrameworkHook implements IXposedHookZygoteInit, IXposedHookLoadPack
     @SuppressLint("MissingPermission")
     public synchronized boolean bindService() {
         if (mContext == null) return false;
+        int uid = 0;
+        try {
+            uid = mContext.getPackageManager().getPackageUid("ar.ne.mipencustomizer", PackageManager.GET_META_DATA);
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        Log.d(TAG, "bindService: binding service as uid: " + uid);
         boolean b = this.mContext.bindServiceAsUser(
                 new Intent()
                         .setComponent(new ComponentName("ar.ne.mipencustomizer", "ar.ne.mipencustomizer.MiPenCustomizerServer"))
                         .setAction(this.getClass().getCanonicalName()),
-                this, Context.BIND_AUTO_CREATE, UserHandle.getUserHandleForUid(0));
+                this, Context.BIND_AUTO_CREATE, UserHandle.getUserHandleForUid(uid));
         if (b) {
             Log.d(TAG, "MiPenCustomizer: Service bound");
             this.mContext.sendBroadcast(new Intent("ar.ne.mipencustomizer.MiPenCustomizerServer.started"));

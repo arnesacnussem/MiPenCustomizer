@@ -116,13 +116,13 @@ public class FlexcilHook implements IXposedHookLoadPackage, ServiceConnection {
             }
         });
 
-        Class<?> toolbarClazz = XposedHelpers.findClass("l6.g", lpparam.classLoader);
+        Class<?> toolbarClazz = XposedHelpers.findClass("p6.g", lpparam.classLoader);
         flexcil.toolbarMgr = XposedHelpers.getStaticObjectField(toolbarClazz, "a");
         Log.i(TAG, "handleLoadPackage: found toolbarMgr=" + flexcil.toolbarMgr);
 
         XposedHelpers.findAndHookConstructor("com.flexcil.flexcilnote.writingView.WritingFragment", lpparam.classLoader, new XC_MethodHook() {
             @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+            protected void afterHookedMethod(MethodHookParam param) {
                 Log.d(TAG, "handleLoadPackage: found writingFragment=" + param.thisObject);
                 flexcil.writingFragment = param.thisObject;
             }
@@ -181,11 +181,11 @@ public class FlexcilHook implements IXposedHookLoadPackage, ServiceConnection {
         private Object writingFragment;
 
         public void selectEraser() {
-            XposedHelpers.callMethod(toolbarMgr, "v", true);
+            XposedHelpers.callMethod(toolbarMgr, "w", true);
         }
 
         public void setCurrentPenToolByIndex(int index) {
-            XposedHelpers.callMethod(toolbarMgr, "x", index, true);
+            XposedHelpers.callMethod(toolbarMgr, "z", index, true);
         }
 
         public boolean currentToolIsEraser() {
@@ -202,16 +202,15 @@ public class FlexcilHook implements IXposedHookLoadPackage, ServiceConnection {
 
         private void toggleTriangle() {
             if (writingFragment == null) return;
-            XposedHelpers.callMethod(writingFragment, "H3");
+            XposedHelpers.callMethod(writingFragment, "y3");
         }
 
-
         public void selectPreviousTool() {
-            XposedHelpers.callMethod(toolbarMgr, "y");
+            XposedHelpers.callMethod(toolbarMgr, "A");
         }
 
         public boolean currentIsDrawingPen() {
-            return (boolean) XposedHelpers.callMethod(toolbarMgr, "q");
+            return (boolean) XposedHelpers.callMethod(toolbarMgr, "r");
         }
     }
 }

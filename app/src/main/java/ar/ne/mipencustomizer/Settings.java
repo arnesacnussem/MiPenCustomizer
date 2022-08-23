@@ -1,6 +1,5 @@
 package ar.ne.mipencustomizer;
 
-import android.annotation.SuppressLint;
 import android.content.*;
 import android.util.Log;
 
@@ -16,7 +15,7 @@ public class Settings {
         this.context = context;
         this.prefs = context.getSharedPreferences("mipencustomizer", Context.MODE_PRIVATE);
         this.longPressTime = prefs.getInt("longPressTime", 1000);
-        this.longPressEnabled = prefs.getBoolean("enableLongPress", false);
+        this.longPressEnabled = prefs.getBoolean("enableLongPress", true);
     }
 
     /**
@@ -28,7 +27,7 @@ public class Settings {
             public void onReceive(Context context, Intent intent) {
                 Log.d(TAG, "Received broadcast: " + intent.getAction());
                 longPressTime = prefs.getInt("longPressTime", 1000);
-                longPressEnabled = prefs.getBoolean("enableLongPress", false);
+                longPressEnabled = prefs.getBoolean("enableLongPress", true);
             }
         };
         context.registerReceiver(broadcastReceiver, new IntentFilter("ar.ne.mipencustomizer.Settings.save"));
@@ -53,13 +52,11 @@ public class Settings {
         save();
     }
 
-    @SuppressLint("ApplySharedPref")
     public void save() {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putInt("longPressTime", longPressTime);
         editor.putBoolean("enableLongPress", longPressEnabled);
         editor.apply();
-        editor.commit();
         context.sendBroadcast(new Intent("ar.ne.mipencustomizer.Settings.save"));
     }
 }
